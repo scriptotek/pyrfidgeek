@@ -1,0 +1,10 @@
+debug: true
+
+serial:
+  port: '/dev/tty.SLAB_USBtoUART'
+  #port: 'COM4'
+  baud_rate: 115200
+  data_bits: 8
+  stop_bits: 1
+  parity: 'N'
+
