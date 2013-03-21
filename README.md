@@ -1,5 +1,8 @@
-'''PyRFIDGeek''' is a python package for serial communication with [RFIDGeek](http://rfidgeek.com/) boards and possibly other boards based on the [TI TRF7970A chip](http://www.ti.com/product/trf7970A), such as [TI's Evaluation Module](http://www.ti.com/tool/trf7970aevm) (EVM). 
+**PyRFIDGeek** is a python package for serial communication with [RFIDGeek](http://rfidgeek.com/) boards 
+(tested with RFIDUARTUSB7970) and possibly other boards based on the [TI TRF7970A chip](http://www.ti.com/product/trf7970A), 
+such as [TI's Evaluation Module](http://www.ti.com/tool/trf7970aevm) (EVM). 
 The package includes methods for working with cards following the Danish RFID data model for libraries.
+
 
 Example:
 ```
