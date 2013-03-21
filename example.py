@@ -4,7 +4,7 @@ import logging
 import argparse
 import yaml
 
-from rfidgeek import PyRFIDGeek
+from pyrfidgeek import PyRFIDGeek
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
