@@ -21,7 +21,7 @@ config = yaml.load(open(args.config, 'r'))
 reader = PyRFIDGeek(config)
 
 for uid in reader.inventory():
-    item = reader.read_tag_danish_model(uid)
+    item = reader.read_danish_model_tag(uid)
     print
     print ' # Item id: %s (part %d of %d)' % (item['id'],
                                               item['partno'],

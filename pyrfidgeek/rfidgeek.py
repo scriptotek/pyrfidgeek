@@ -6,6 +6,7 @@ import serial
 import logging
 import re
 import pprint
+from termcolor import colored
 
 from crc import CRC
 
@@ -101,7 +102,7 @@ class PyRFIDGeek(object):
                     logger.debug('Found tag: %s (%s) ', uid, itm[1])
                     yield uid
 
-    def read_tag_danish_model(self, uid):
+    def read_danish_model_tag(self, uid):
         # Command code 0x23: Read multiple blocks
         block_offset = 0
         number_of_blocks = 8
@@ -141,6 +142,48 @@ class PyRFIDGeek(object):
             'crc_ok': calc_crc == crc
         }
 
+    def write_danish_model_tag(self, uid, data):
+        block_number = 0
+        blocks = []
+
+        data_bytes = ['FF' for x in range(32)]
+        data_bytes[0] = '11'
+        data_bytes[1] = '%01X' % data['partno']
+        data_bytes[2] = '%01X' % data['nparts']
+        dokid = ['%.2X' % ord(c) for c in data['id']]
+        data_bytes[3:3+len(dokid)] = dokid
+        data_bytes[21:23] = ['%.2X' % ord(c) for c in data['country']]
+        libnr = ['%.2X' % ord(c) for c in data['library']]
+        data_bytes[23:23+len(libnr)] = libnr
+
+        # CRC calculation:
+        p1 = data_bytes[0:19]     # 19 bytes
+        p2 = data_bytes[21:32]    # 11 bytes
+        p3 = ['00', '00']       # need to add 2 empty bytes to get 19 + 13 bytes
+        p = [int(x, 16) for x in p1 + p2 + p3]
+        crc = ''.join(CRC().calculate(p)[::-1])
+        data_bytes[19:21] = crc
+
+        for x in range(8):
+            if not write_block(x, data_bytes[x*8:x*8+4]):
+                return False
+        return True
+
+    def write_block(block_number, data):
+        if type(data) != list or len(data) != 4:
+            raise StandardError('write_block got data of unknown type/length')
+
+        response = self.issue_command(cmd='18',
+                                      flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
+                                      command_code='21',
+                                      data='%s%02X%s' % (uid, block_number, ''.join(data)))
+        if response[0] == '00':
+            logger.debug('Wrote block %d successfully', block_number)
+            return True
+        else:
+            return False
+
+
     def unlock_afi(self, uid):
         self.issue_command(cmd='18',
                            flags=flagsbyte(address=False,
@@ -177,12 +220,12 @@ class PyRFIDGeek(object):
         self.sp.readall()
 
     def write(self, msg):
-        logger.debug('[%2d]> %s %s %s %s' % (len(msg)/2, msg[0:10], msg[10:12], msg[12:14], msg[14:]))
+        logger.debug('SEND(%2d): ' % len(msg)/2 + colored('%s %s %s %s' % (msg[0:10], msg[10:12], msg[12:14], msg[14:]), 'green'))
         self.sp.write(msg)
 
     def read(self):
         msg = self.sp.readall()
-        logger.debug('< ' + pprint.saferepr(msg))
+        logger.debug('RETR(%3d): ' % len(msg)/2 + colored(pprint.saferepr(msg), 'brown'))
         return msg
 
     def get_response(self, response):
