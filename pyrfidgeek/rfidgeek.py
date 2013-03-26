@@ -1,13 +1,11 @@
 # -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- 
 # vim:fenc=utf-8:et:sw=4:ts=4:sts=4:tw=0
-#
 
 import serial
 import logging
 import re
 import pprint
 from termcolor import colored
-
 from crc import CRC
 
 logger = logging.getLogger()
@@ -61,6 +59,12 @@ class PyRFIDGeek(object):
         # Initialize reader: 0xFF
         # 0108000304 FF 0000
         self.issue_command(cmd='FF')
+
+        # Register write request: 0x10
+        # 010A000304 10 01 21 0000
+        # 010C000304 10 00 21 0100 0000
+        # 010C000304 10 00 21 0100 0000
+        self.issue_command(cmd='10', flags='00', command_code='21')
 
         # Register write request: 0x10
         # 010A000304 10 01 21 0000
@@ -146,14 +150,14 @@ class PyRFIDGeek(object):
         block_number = 0
         blocks = []
 
-        data_bytes = ['FF' for x in range(32)]
+        data_bytes = ['00' for x in range(32)]
         data_bytes[0] = '11'
-        data_bytes[1] = '%01X' % data['partno']
-        data_bytes[2] = '%01X' % data['nparts']
-        dokid = ['%.2X' % ord(c) for c in data['id']]
+        data_bytes[1] = '%02X' % data['partno']
+        data_bytes[2] = '%02X' % data['nparts']
+        dokid = ['%02X' % ord(c) for c in data['id']]
         data_bytes[3:3+len(dokid)] = dokid
-        data_bytes[21:23] = ['%.2X' % ord(c) for c in data['country']]
-        libnr = ['%.2X' % ord(c) for c in data['library']]
+        data_bytes[21:23] = ['%02X' % ord(c) for c in data['country']]
+        libnr = ['%02X' % ord(c) for c in data['library']]
         data_bytes[23:23+len(libnr)] = libnr
 
         # CRC calculation:
@@ -161,15 +165,20 @@ class PyRFIDGeek(object):
         p2 = data_bytes[21:32]    # 11 bytes
         p3 = ['00', '00']       # need to add 2 empty bytes to get 19 + 13 bytes
         p = [int(x, 16) for x in p1 + p2 + p3]
-        crc = ''.join(CRC().calculate(p)[::-1])
+        crc = CRC().calculate(p)[::-1]
         data_bytes[19:21] = crc
 
+        print data_bytes
+
         for x in range(8):
-            if not write_block(x, data_bytes[x*8:x*8+4]):
-                return False
+            print data_bytes[x*4:x*4+4]
+            if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
+                logger.warn('Write failed, retrying')
+                if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
+                    return False
         return True
 
-    def write_block(block_number, data):
+    def write_block(self, uid, block_number, data):
         if type(data) != list or len(data) != 4:
             raise StandardError('write_block got data of unknown type/length')
 
@@ -220,16 +229,16 @@ class PyRFIDGeek(object):
         self.sp.readall()
 
     def write(self, msg):
-        logger.debug('SEND(%2d): ' % len(msg)/2 + colored('%s %s %s %s' % (msg[0:10], msg[10:12], msg[12:14], msg[14:]), 'green'))
+        logger.debug('SEND%3d: ' % (len(msg)/2) + msg[0:10] + colored(msg[10:12], attrs=['underline']) + msg[12:14] + colored(msg[14:], 'green'))
         self.sp.write(msg)
 
     def read(self):
         msg = self.sp.readall()
-        logger.debug('RETR(%3d): ' % len(msg)/2 + colored(pprint.saferepr(msg), 'brown'))
+        logger.debug('RETR%3d: ' % (len(msg)/2) + colored(pprint.saferepr(msg).strip("'"), 'cyan'))
         return msg
 
     def get_response(self, response):
-        return re.findall(r'\[(.+?)\]', response)
+        return re.findall(r'\[(.*?)\]', response)
 
     def close(self):
         self.sp.close()
