@@ -26,6 +26,7 @@ reader = PyRFIDGeek(config)
 try:
 
     uids = []
+    current_uids = []
     while True:
         uids = list(reader.inventory())
         for uid in uids:

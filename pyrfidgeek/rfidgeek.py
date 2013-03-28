@@ -114,7 +114,11 @@ class PyRFIDGeek(object):
                                       flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
                                       command_code='23',
                                       data=uid + '%02X%02X' % (block_offset, number_of_blocks))
+
         response = response[0]
+        if response == 'z' or response == '':
+            return {}
+
         response = [response[i:i+2] for i in range(2, len(response), 2)]
 
         # Reference:
@@ -137,11 +141,11 @@ class PyRFIDGeek(object):
 
         return {
             'uid': uid,
-            'id': itemid,
+            'id': itemid.strip('\0'),
             'partno': partno,
             'nparts': nparts,
             'country': country,
-            'library': library,
+            'library': library.strip('\0'),
             'crc': crc,
             'crc_ok': calc_crc == crc
         }
