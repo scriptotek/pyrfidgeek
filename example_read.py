@@ -33,11 +33,11 @@ try:
         print '%d tags' % len(uids)
         for uid in uids:
 
-            if not uid in prev_uids[0] and not uid in prev_uids[1]: # and not uid in prev_uids[2]:
+            if not uid in prev_uids[0] and not uid in prev_uids[1]:  # and not uid in prev_uids[2]:
                 item = reader.read_danish_model_tag(uid)
                 if 'id' in item:
                     print
-                    print ' Found new tag'
+                    print ' Found new tag, usage type: %s' % item['usage_type']
                     print ' # Item id: %s (part %d of %d)' % (item['id'],
                                                               item['partno'],
                                                               item['nparts'])
@@ -51,7 +51,6 @@ try:
                     print
                 else:
                     print ' (could not read tag)'
-
 
             #reader.unlock_afi(uid)
 

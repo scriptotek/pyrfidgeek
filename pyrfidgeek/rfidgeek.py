@@ -116,14 +116,33 @@ class PyRFIDGeek(object):
                                       data=uid + '%02X%02X' % (block_offset, number_of_blocks))
 
         response = response[0]
-        if response == 'z' or response == '':
-            return {}
+        if response == 'z':
+            return {'error': 'tag-conflict'}
+        elif response == '':
+            return {'error': 'read-failed'}
 
         response = [response[i:i+2] for i in range(2, len(response), 2)]
+
+        if response[0] == '00':
+            is_blank = True
+        else:
+            is_blank = False
 
         # Reference:
         # RFID Data model for libraries : Doc 067 (July 2005), p. 30
         # <http://www.biblev.no/RFID/dansk_rfid_datamodel.pdf>
+        version = response[0][0]    # not sure if this is really the way to do it
+        if version != 1:
+            return {'error': 'unknown-version'}
+
+        usage_type = {
+            '0': 'acquisition',
+            '1': 'for-circulation',
+            '2': 'not-for-circulation',
+            '7': 'discarded',
+            '8': 'patron-card'
+        }[response[0][1]]  # not sure if this is really the way to do it
+
         nparts = int(response[1], 16)
         partno = int(response[2], 16)
         itemid = ''.join([chr(int(x, 16)) for x in response[3:19]])
@@ -140,6 +159,9 @@ class PyRFIDGeek(object):
         crc = ''.join(crc)
 
         return {
+            'error': '',
+            'is_blank': is_blank,
+            'usage_type': usage_type,
             'uid': uid,
             'id': itemid.strip('\0'),
             'partno': partno,
@@ -149,6 +171,7 @@ class PyRFIDGeek(object):
             'crc': crc,
             'crc_ok': calc_crc == crc
         }
+
 
     def write_danish_model_tag(self, uid, data):
         block_number = 0
@@ -160,6 +183,42 @@ class PyRFIDGeek(object):
         data_bytes[2] = '%02X' % data['nparts']
         dokid = ['%02X' % ord(c) for c in data['id']]
         data_bytes[3:3+len(dokid)] = dokid
+        data_bytes[21:23] = ['%02X' % ord(c) for c in data['country']]
+        libnr = ['%02X' % ord(c) for c in data['library']]
+        data_bytes[23:23+len(libnr)] = libnr
+
+        # CRC calculation:
+        p1 = data_bytes[0:19]     # 19 bytes
+        p2 = data_bytes[21:32]    # 11 bytes
+        p3 = ['00', '00']       # need to add 2 empty bytes to get 19 + 13 bytes
+        p = [int(x, 16) for x in p1 + p2 + p3]
+        crc = CRC().calculate(p)[::-1]
+        data_bytes[19:21] = crc
+
+        print data_bytes
+
+        for x in range(8):
+            print data_bytes[x*4:x*4+4]
+            if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
+                logger.warn('Write failed, retrying')
+                if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
+                    return False
+        return True
+
+    def write_danish_model_patron_card(self, uid, data):
+        block_number = 0
+        blocks = []
+
+        data_bytes = ['00' for x in range(32)]
+
+        version = '1'
+        usage_type = '8'
+        data_bytes[0] = version + usage_type
+        data_bytes[1] = '01'  # partno
+        data_bytes[2] = '01'  # nparts
+        userid = ['%02X' % ord(c) for c in data['user_id']]
+        print 'userid:', userid
+        data_bytes[3:3+len(userid)] = userid
         data_bytes[21:23] = ['%02X' % ord(c) for c in data['country']]
         libnr = ['%02X' % ord(c) for c in data['library']]
         data_bytes[23:23+len(libnr)] = libnr

@@ -27,6 +27,13 @@ reader = PyRFIDGeek(config)
 
 def on_message(ws, message):
     logger.info(message)
+    if message['msg'] == 'write-patron-card':
+        person_data = message['data']
+        reader.write_danish_model_patron_card({
+            'user_id': persondata['user_id'],
+            'library': '1030310',
+            'country': 'NO'
+        })
 
 def on_error(ws, error):
     logger.error(error)
@@ -47,6 +54,8 @@ def on_open(ws):
             uids = {}
             prev_uids = [{}, {}]
 
+            logger.info('Scanning for tags')
+
             while True:
                 uids = {}
                 for uid in reader.inventory():
@@ -61,15 +70,25 @@ def on_open(ws):
                     if oid == '':
                         #if not uid in prev_uids[0] and not uid in prev_uids[1]:
                         item = reader.read_danish_model_tag(uid)
-                        if 'id' in item:
-                            oid = item['id']
-                            if not oid in uids.values():
-                                logger.info('Pushing tag %s to server' % item['id'])
+                        if item['error'] == '':
+
+                            if item['is_blank']:
+                                logger.info('Blank tag found')
                                 ws.send(json.dumps({
-                                    'msg': 'new-item',
-                                    'itemid': item['id']
+                                    'msg': 'blank-tag',
+                                    'uid': uid
                                 }))
-                            uids[uid] = oid
+
+                            elif 'id' in item:
+                                oid = item['id']
+                                if not oid in uids.values():
+                                    logger.info('Tag found: %s' % item['id'])
+                                    ws.send(json.dumps({
+                                        'msg': 'new-item',
+                                        'itemid': item['id'],
+                                        'uid': uid
+                                    }))
+                                uids[uid] = oid
 
                 prev_uids[1] = copy(prev_uids[0])
                 prev_uids[0] = copy(uids)
