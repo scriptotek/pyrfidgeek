@@ -12,7 +12,7 @@ from pyrfidgeek import PyRFIDGeek
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 parser = argparse.ArgumentParser(description='PyRfidGeek reader example')
@@ -26,29 +26,38 @@ reader = PyRFIDGeek(config)
 try:
 
     uids = []
-    current_uids = []
+    prev_uids = [[], []]
     while True:
         uids = list(reader.inventory())
+        successful_reads = []
+        print '%d tags' % len(uids)
         for uid in uids:
 
-            if not uid in current_uids:
+            if not uid in prev_uids[0] and not uid in prev_uids[1]: # and not uid in prev_uids[2]:
                 item = reader.read_danish_model_tag(uid)
-                print
-                print ' Found new tag'
-                print ' # Item id: %s (part %d of %d)' % (item['id'],
-                                                          item['partno'],
-                                                          item['nparts'])
-                print '   Country: %s, library: %s' % (item['country'],
-                                                       item['library'])
-                if item['crc_ok']:
-                    print '   CRC check successful'
+                if 'id' in item:
+                    print
+                    print ' Found new tag'
+                    print ' # Item id: %s (part %d of %d)' % (item['id'],
+                                                              item['partno'],
+                                                              item['nparts'])
+                    print '   Country: %s, library: %s' % (item['country'],
+                                                           item['library'])
+                    if item['crc_ok']:
+                        print '   CRC check successful'
+                        successful_reads.append(uid)
+                    else:
+                        print '   CRC check failed'
+                    print
                 else:
-                    print '   CRC check failed'
-                print
+                    print ' (could not read tag)'
+
 
             #reader.unlock_afi(uid)
 
-        current_uids = copy(uids)
+        #prev_uids[2] = copy(prev_uids[1])
+        prev_uids[1] = copy(prev_uids[0])
+        prev_uids[0] = copy(uids)
 
         time.sleep(1)
 
