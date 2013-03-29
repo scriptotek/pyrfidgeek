@@ -14,7 +14,7 @@ from pyrfidgeek import PyRFIDGeek
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 logger.addHandler(ch)
 
 parser = argparse.ArgumentParser(description='PyRfidGeek reader example')
@@ -44,21 +44,36 @@ def on_open(ws):
 
         try:
 
-            uids = []
-            current_uids = []
+            uids = {}
+            prev_uids = [{}, {}]
+
             while True:
-                uids = list(reader.inventory())
-                for uid in uids:
+                uids = {}
+                for uid in reader.inventory():
+                    uids[uid] = ''
+                    if uid in prev_uids[0]:
+                        uids[uid] = prev_uids[0][uid]
+                    elif uid in prev_uids[1]:
+                        uids[uid] = prev_uids[1][uid]
 
-                    if not uid in current_uids:
+                for uid, oid in uids.items():
+
+                    if oid == '':
+                        #if not uid in prev_uids[0] and not uid in prev_uids[1]:
                         item = reader.read_danish_model_tag(uid)
-                        ws.send(json.dumps({
-                            'msg': 'new-item',
-                            'itemid': item['id']
-                        }))
+                        if 'id' in item:
+                            oid = item['id']
+                            if not oid in uids.values():
+                                logger.info('Pushing tag %s to server' % item['id'])
+                                ws.send(json.dumps({
+                                    'msg': 'new-item',
+                                    'itemid': item['id']
+                                }))
+                            uids[uid] = oid
 
-                current_uids = copy(uids)
-                #time.sleep(1)
+                prev_uids[1] = copy(prev_uids[0])
+                prev_uids[0] = copy(uids)
+                time.sleep(0.5)
 
         finally:
             reader.close()
