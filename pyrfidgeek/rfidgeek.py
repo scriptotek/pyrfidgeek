@@ -7,7 +7,7 @@ import re
 import pprint
 from termcolor import colored
 from crc import CRC
-
+import time
 logger = logging.getLogger()
 
 
@@ -131,8 +131,11 @@ class PyRFIDGeek(object):
         # Reference:
         # RFID Data model for libraries : Doc 067 (July 2005), p. 30
         # <http://www.biblev.no/RFID/dansk_rfid_datamodel.pdf>
+
+        # RFID Data model for libraries (February 2009), p. 30
+        # http://biblstandard.dk/rfid/dk/RFID_Data_Model_for_Libraries_February_2009.pdf
         version = response[0][0]    # not sure if this is really the way to do it
-        if version != 1:
+        if version != '0' and version != '1':
             return {'error': 'unknown-version'}
 
         usage_type = {
@@ -205,6 +208,27 @@ class PyRFIDGeek(object):
                     return False
         return True
 
+    def write_blocks_to_card(self, uid, data_bytes, offset=0, nblocks=8):
+        for x in range(offset, nblocks):
+            print data_bytes[x*4:x*4+4]
+            success = False
+            attempts = 0
+            max_attempts = 10
+            while not success:
+                attempts += 1
+                success = self.write_block(uid, x, data_bytes[x*4:x*4+4])
+                if not success:
+                    logger.warn('Write failed, retrying')
+                    if attempts > max_attempts:
+                        logger.warn('Giving up!')
+                        return False
+                    #time.sleep(1.0)
+        return True
+
+    def erase_card(self, uid):
+        data_bytes = ['00' for x in range(32)]
+        return self.write_blocks_to_card(uid, data_bytes)
+
     def write_danish_model_patron_card(self, uid, data):
         block_number = 0
         blocks = []
@@ -233,13 +257,7 @@ class PyRFIDGeek(object):
 
         print data_bytes
 
-        for x in range(8):
-            print data_bytes[x*4:x*4+4]
-            if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
-                logger.warn('Write failed, retrying')
-                if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
-                    return False
-        return True
+        return self.write_blocks_to_card(uid, data_bytes)
 
     def write_block(self, uid, block_number, data):
         if type(data) != list or len(data) != 4:
