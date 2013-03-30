@@ -35,22 +35,25 @@ try:
 
             if not uid in prev_uids[0] and not uid in prev_uids[1]:  # and not uid in prev_uids[2]:
                 item = reader.read_danish_model_tag(uid)
-                if 'id' in item:
-                    print
-                    print ' Found new tag, usage type: %s' % item['usage_type']
-                    print ' # Item id: %s (part %d of %d)' % (item['id'],
-                                                              item['partno'],
-                                                              item['nparts'])
-                    print '   Country: %s, library: %s' % (item['country'],
-                                                           item['library'])
-                    if item['crc_ok']:
-                        print '   CRC check successful'
-                        successful_reads.append(uid)
-                    else:
-                        print '   CRC check failed'
-                    print
+                if item['error'] != '':
+                    print 'error reading tag: ',item['error']
                 else:
-                    print ' (could not read tag)'
+                    if item['is_blank']:
+                        print ' Found blank tag'
+
+                    elif 'id' in item:
+                        print
+                        print ' Found new tag, usage type: %s' % item['usage_type']
+                        print ' # Item id: %s (part %d of %d)' % (item['id'],
+                                                                  item['partno'],
+                                                                  item['nparts'])
+                        print '   Country: %s, library: %s' % (item['country'],
+                                                               item['library'])
+                        if item['crc_ok']:
+                            print '   CRC check successful'
+                            successful_reads.append(uid)
+                        else:
+                            print '   CRC check failed'
 
             #reader.unlock_afi(uid)
 
