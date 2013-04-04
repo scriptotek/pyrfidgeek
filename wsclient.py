@@ -183,7 +183,8 @@ class WsSock(object):
             q.put('cont')
             self.ws.send(json.dumps({
                 'rcpt': 'frontend',
-                'msg': 'card-written'
+                'msg': 'card-written',
+                'user_id': message['data']['user_id']
             }))
 
     def on_error(self, ws, error):
