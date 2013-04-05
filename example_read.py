@@ -12,7 +12,7 @@ from pyrfidgeek import PyRFIDGeek
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
 parser = argparse.ArgumentParser(description='PyRfidGeek reader example')
@@ -25,12 +25,19 @@ reader = PyRFIDGeek(config)
 
 try:
 
+    led_enabled = False
     uids = []
     prev_uids = [[], []]
     while True:
         uids = list(reader.inventory())
         successful_reads = []
         print '%d tags' % len(uids)
+        if len(uids) > 0 and not led_enabled:
+            reader.enable_led(3)
+            led_enabled = True
+        elif len(uids) == 0 and led_enabled:
+            reader.disable_led(3)
+            led_enabled = False
         for uid in uids:
 
             if not uid in prev_uids[0] and not uid in prev_uids[1]:  # and not uid in prev_uids[2]:
