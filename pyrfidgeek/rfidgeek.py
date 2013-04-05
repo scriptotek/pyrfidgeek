@@ -136,7 +136,8 @@ class PyRFIDGeek(object):
         # http://biblstandard.dk/rfid/dk/RFID_Data_Model_for_Libraries_February_2009.pdf
         version = response[0][0]    # not sure if this is really the way to do it
         if version != '0' and version != '1':
-            return {'error': 'unknown-version'}
+            print response
+            return {'error': 'unknown-version: %s' % version}
 
         usage_type = {
             '0': 'acquisition',
