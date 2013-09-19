@@ -193,7 +193,8 @@ class WsSock(object):
 
     def on_message(self, ws, message):
         message = json.loads(message)
-        logger.info('Got patron card write request from ws frontend client')
+        user_id = str(message['data']['user_id']);
+        logger.info('Got patron card write request from ws frontend client, user id: %s ' % user_id)
         queue = active_queues[0]
 
         # Tell inventory scan thread to pause (while writing)
@@ -218,7 +219,7 @@ class WsSock(object):
 
         rfid.enable_led(5)
         rfid.write_danish_model_patron_card(message['uid'], {
-            'user_id': message['data']['user_id'],
+            'user_id': user_id,
             'library': '1030310',
             'country': 'NO'
         })
@@ -229,7 +230,7 @@ class WsSock(object):
         self.ws.send(json.dumps({
             'rcpt': 'frontend',
             'msg': 'card-written',
-            'user_id': message['data']['user_id']
+            'user_id': user_id
         }))
 
     def attach_websocket_logger(self):

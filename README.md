@@ -3,6 +3,7 @@ using serial communication to [RFIDGeek](http://rfidgeek.com/) boards
 (tested with RFIDUARTUSB7970) and possibly other boards based on the [TI TRF7970A chip](http://www.ti.com/product/trf7970A), 
 such as [TI's Evaluation Module](http://www.ti.com/tool/trf7970aevm) (EVM). 
 
+
 Reading example:
 ```python
 import yaml
@@ -46,3 +47,6 @@ for partno, uid in enumerate(uids):
 
 rfid.close()
 ```
+
+Installation for the websocket example:
+* Install the websocket python package: `pip install websocket-client` 
