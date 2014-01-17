@@ -185,8 +185,8 @@ class WsSock(object):
         self.connect()
 
     def connect(self):
-        logger.info('Trying to connect to labs.biblionaut.net:8080')
-        self.ws = websocket.WebSocketApp('ws://labs.biblionaut.net:8080',
+        logger.info('Trying to connect to linode2.biblionaut.net:8080')
+        self.ws = websocket.WebSocketApp('ws://linode2.biblionaut.net:8080',
                                  on_open = self.on_open,
                                  on_message = self.on_message,
                                  on_error = self.on_error,
