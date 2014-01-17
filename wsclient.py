@@ -68,7 +68,7 @@ class ScannerThread(threading.Thread):
         self.stoprequest.set()
         super(WorkerThread, self).join(timeout)
 
-    def pause(self): 
+    def pause(self):
         self.paused = True
 
     def cont(self):
@@ -90,7 +90,7 @@ class ScannerThread(threading.Thread):
     def run(self):
         ws = self.ws
 
-        # Start by saying hello 
+        # Start by saying hello
         ws.send(json.dumps({
             'msg': 'hello',
             'role': 'backend'
@@ -108,7 +108,8 @@ class ScannerThread(threading.Thread):
                     data = self.mailbox.get()
                     if data == 'shutdown':
                         print self, 'Shutting down inventory scan'
-                        return
+                        #rfid.close()
+                        return False
                     elif data == 'pause':
                         self.paused = True
                         logger.info('Pausing inventory scan')
@@ -166,12 +167,13 @@ class ScannerThread(threading.Thread):
                 time.sleep(0.5)
 
         finally:
-            rfid.close()
+            print "Thread is exiting..."
+            #rfid.close()
 
         time.sleep(1)
-        ws.close()
+        #ws.close()
 
-        print "thread terminating..."
+        print "Thread is terminating..."
 
 
 rfid = PyRFIDGeek(config)
@@ -195,7 +197,11 @@ class WsSock(object):
         logger.error(error)
 
     def on_close(self, ws):
-        logger.info("websocket closed")
+        logger.info("Websocket closed")
+        if len(active_queues) > 0:
+            queue = active_queues[0]
+            queue.put('shutdown')
+
         logger.info("Reconnecting in 5 seconds...")
         time.sleep(5)
         self.connect()
@@ -209,6 +215,9 @@ class WsSock(object):
 
     def on_message(self, ws, message):
         message = json.loads(message)
+        if not 'data' in message:
+            return
+
         user_id = str(message['data']['user_id']);
         logger.info('Got patron card write request from ws frontend client, user id: %s ' % user_id)
         queue = active_queues[0]
@@ -258,4 +267,8 @@ class WsSock(object):
 if __name__ == "__main__":
 
     websocket.enableTrace(True)
-    s = WsSock()
+    try:
+        s = WsSock()
+    except KeyboardInterrupt:
+        print "Closing RFID socket"
+        rfid.close()
