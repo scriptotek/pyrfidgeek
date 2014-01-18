@@ -4,7 +4,7 @@
 import logging
 import argparse
 import yaml
-import readline
+#import pyreadline
 import sys
 import serial
 import time
@@ -13,12 +13,12 @@ from termcolor import colored
 from pyrfidgeek import PyRFIDGeek
 
 
-def rlinput(prompt, prefill=''):
-    readline.set_startup_hook(lambda: readline.insert_text(prefill))
-    try:
-        return raw_input(prompt)
-    finally:
-        readline.set_startup_hook()
+# def rlinput(prompt, prefill=''):
+#     readline.set_startup_hook(lambda: readline.insert_text(prefill))
+#     try:
+#         return raw_input(prompt)
+#     finally:
+#         readline.set_startup_hook()
 
 
 logger = logging.getLogger()
@@ -54,18 +54,19 @@ try:
             if item['id'] != '':
                 print ' # Warning: Found a non-blank tag.'
                 print
-                answer = rlinput(colored('Overwrite tag? ', 'red'), 'n').lower()
+                #answer = rlinput(colored('Overwrite tag? ', 'red'), 'n').lower()
+                answer = input('Overwrite tag? [y/n]').lower()
                 if answer != 'y' and answer != 'j':
                     sys.exit(0)
 
         for partno, uid in enumerate(uids, start=1):
-            dokid = rlinput('Enter dokid: ', '75K110086')
+            dokid = input('Enter dokid: ')
             data = {
                 'id': dokid,
                 'partno': partno,
                 'nparts': len(uids),
                 'country': 'NO',
-                'library': '1030310'
+                'library': '1032204'
                 }
             if reader.write_danish_model_tag(uid, data):
                 print 'ok'
