@@ -45,33 +45,65 @@ try:
     uids = []
     while len(uids) == 0:
         uids = list(reader.inventory())
-        print 
-        print 'Found %d tag(s)' % len(uids)
+        print
+        if len(uids) == 0:
+            print
+            print 'Klar for ny bok!'
+            print
+        else:
+            print 'Found %d tag(s)' % len(uids)
 
         # Check if all tags are blank:
         for uid in uids:
             item = reader.read_danish_model_tag(uid)
-            if item['id'] != '':
-                print ' # Warning: Found a non-blank tag.'
+            print item
+            if not 'id' in item:
+                print item
+            elif item['id'] != '':
+                print
+                print ' ##########################################'
+                print ' # Warning: Found a non-blank tag         #'
+                print ' ##########################################'
                 print
                 #answer = rlinput(colored('Overwrite tag? ', 'red'), 'n').lower()
-                answer = input('Overwrite tag? [y/n]').lower()
+                answer = raw_input('Overwrite tag? [y/n]').lower()
                 if answer != 'y' and answer != 'j':
                     sys.exit(0)
 
-        for partno, uid in enumerate(uids, start=1):
-            dokid = input('Enter dokid: ')
-            data = {
-                'id': dokid,
-                'partno': partno,
-                'nparts': len(uids),
-                'country': 'NO',
-                'library': '1032204'
-                }
-            if reader.write_danish_model_tag(uid, data):
-                print 'ok'
-            else:
-                print 'oh noes, write failed'
+        data = {
+            'nparts': len(uids),
+            'country': 'NO',
+            'library': '1030310'
+            }
+
+        if len(uids) != 0:
+            print
+            print 'Libnr: %(library)s, Country: %(country)s, Parts: %(nparts)s' % data
+            data['id'] = raw_input('Enter dokid: ')
+
+            for partno, uid in enumerate(uids, start=1):
+                data['partno'] = partno
+                if reader.write_danish_model_tag(uid, data):
+                    print 'ok'
+                else:
+                    print
+                    print ' ##########################################'
+                    print ' # Oh noes, write failed!                 #'
+                    print ' ##########################################'
+                    print
+                    sys.exit(0)
+
+
+            print
+            print 'Tag(s) written successfully!'
+            print
+
+            while len(uids) != 0:
+                print
+                print 'Vennligst fjern boka'
+                print
+                uids = list(reader.inventory())
+                time.sleep(1)
 
         time.sleep(1)
 
