@@ -177,7 +177,7 @@ class PyRFIDGeek(object):
         }
 
 
-    def write_danish_model_tag(self, uid, data):
+    def write_danish_model_tag(self, uid, data, max_attempts=20):
         block_number = 0
         blocks = []
 
@@ -203,10 +203,14 @@ class PyRFIDGeek(object):
 
         for x in range(8):
             print data_bytes[x*4:x*4+4]
-            if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
-                logger.warn('Write failed, retrying')
-                if not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
+            attempt = 1
+            while not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
+                logger.warn('Attempt %d of %d: Write failed, retrying...' % (attempt, max_attempts))
+                if attempt >= max_attempts:
                     return False
+                else:
+                    attempt += 1
+                    time.sleep(1.0)
         return True
 
     def write_blocks_to_card(self, uid, data_bytes, offset=0, nblocks=8):
