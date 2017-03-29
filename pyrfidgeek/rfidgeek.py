@@ -58,40 +58,40 @@ class PyRFIDGeek(object):
 
         # Initialize reader: 0xFF
         # 0108000304 FF 0000
-        self.issue_command(cmd='FF')
+        self.issue_iso15693_command(cmd='FF')
 
         # Register write request: 0x10
         # 010A000304 10 01 21 0000
         # 010C000304 10 00 21 0100 0000
         # 010C000304 10 00 21 0100 0000
-        self.issue_command(cmd='10', flags='00', command_code='21')
+        self.issue_iso15693_command(cmd='10', flags='00', command_code='21')
 
         # Register write request: 0x10
         # 010A000304 10 01 21 0000
         # 010C000304 10 00 21 0100 0000
         # 010C000304 10 00 21 0100 0000
-        self.issue_command(cmd='10', flags='00', command_code='21', data='0100')
+        self.issue_iso15693_command(cmd='10', flags='00', command_code='21', data='0100')
 
         # Enable AGC: 0xF0
         # 0109000304 F0 00 0000
-        self.issue_command(cmd='F0')
+        self.issue_iso15693_command(cmd='F0')
 
         # AM input: 0xF1
         # 0109000304 F1 FF 0000
-        self.issue_command(cmd='F1', flags='FF')
+        self.issue_iso15693_command(cmd='F1', flags='FF')
 
     def enable_led(self, led_no):
         cmd_codes = {2: 'FB', 3: 'F9', 4: 'F7', 5: 'F5', 6: 'F3'}
-        self.issue_command(cmd=cmd_codes[led_no])
+        self.issue_iso15693_command(cmd=cmd_codes[led_no])
 
     def disable_led(self, led_no):
         cmd_codes = {2: 'FC', 3: 'FA', 4: 'F8', 5: 'F6', 6: 'F4'}
-        self.issue_command(cmd=cmd_codes[led_no])
+        self.issue_iso15693_command(cmd=cmd_codes[led_no])
 
     def inventory(self, single_slot=False):
         # Command code 0x01: ISO 15693 Inventory request
         # Example: 010B000304 14 24 0100 0000
-        response = self.issue_command(cmd='14',         # ??
+        response = self.issue_iso15693_command(cmd='14',         # ??
                                       flags=flagsbyte(inventory=True,
                                                       single_slot=single_slot),
                                       command_code='01',
@@ -110,7 +110,7 @@ class PyRFIDGeek(object):
         # Command code 0x23: Read multiple blocks
         block_offset = 0
         number_of_blocks = 8
-        response = self.issue_command(cmd='18',
+        response = self.issue_iso15693_command(cmd='18',
                                       flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
                                       command_code='23',
                                       data=uid + '%02X%02X' % (block_offset, number_of_blocks))
@@ -268,7 +268,7 @@ class PyRFIDGeek(object):
         if type(data) != list or len(data) != 4:
             raise StandardError('write_block got data of unknown type/length')
 
-        response = self.issue_command(cmd='18',
+        response = self.issue_iso15693_command(cmd='18',
                                       flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
                                       command_code='21',
                                       data='%s%02X%s' % (uid, block_number, ''.join(data)))
@@ -280,7 +280,7 @@ class PyRFIDGeek(object):
 
 
     def unlock_afi(self, uid):
-        self.issue_command(cmd='18',
+        self.issue_iso15693_command(cmd='18',
                            flags=flagsbyte(address=False,
                                            high_data_rate=True,
                                            option=False),  # 32 (dec) <-> 20 (hex)
@@ -288,28 +288,42 @@ class PyRFIDGeek(object):
                            data='C2')
 
     def lock_afi(self, uid):
-        self.issue_command(cmd='18',
+        self.issue_iso15693_command(cmd='18',
                            flags=flagsbyte(address=False,
                                            high_data_rate=False,
                                            option=False),  # 32 (dec) <-> 20 (hex)
                            command_code='27',
                            data='07')
 
-    def issue_command(self, cmd, flags='', command_code='', data=''):
-        # The communication starts with SOF (0x01).
-        # The second byte defines the number of bytes in the frame including SOF.
-        # The third byte should be kept at 0x00, fourth byte at 0x03 and the fifth byte at 0x04.
-        # The sixth byte is the command code, which is followed by parameters or data.
-        # The communication ends with 2 bytes of 0x00.
+    def issue_evm_command(self, cmd, prms=''):
+        # The EVM protocol has a general form as shown below:
+        #  1. SOF (Start of File): 0x01
+        #  2. LENGTH : Two bytes define the number of bytes in the frame including SOF. Least Significant Byte first!
+        #  3. READER_TYPE : 0x03
+        #  4. ENTITY : 0x04
+        #  5. CMD : The command
+        #  6. PRMS : Parameters
+        #  7. EOF : 0x0000
 
-        cmd = '000304' + cmd + flags + command_code + data + '0000'
-        cmd_len = 2 + len(cmd)/2   # number of bytes
-        cmd_len_hex = '%0.2X' % cmd_len
-        cmd = '01' + cmd_len_hex + cmd
+        # Two-digit hex strings (without 0x prefix)
+        sof = '01'
+        reader_type = '03'
+        entity = '04'
+        eof = '0000'
 
-        self.write(cmd)
+        result = reader_type + entity + cmd + prms + eof
+
+        length = len(result)/2 + 3  # Number of *bytes*, + 3 to include SOF and LENGTH
+        length = '%04X' % length  # Convert int to hex
+        length = length.decode('hex')[::-1].encode('hex').upper()  # Reverse hex string to get LSB first
+        result = sof + length + result
+
+        self.write(result)
         response = self.read()
         return self.get_response(response)
+
+    def issue_iso15693_command(self, cmd, flags='', command_code='', data=''):
+        return self.issue_evm_command(cmd, flags + command_code + data)
 
     def flush(self):
         self.sp.readall()
