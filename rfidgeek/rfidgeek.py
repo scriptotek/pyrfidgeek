@@ -1,13 +1,15 @@
-# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- 
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # vim:fenc=utf-8:et:sw=4:ts=4:sts=4:tw=0
 
+from __future__ import print_function
 import serial
 import logging
 import re
 import pprint
 from termcolor import colored
-from crc import CRC
 import time
+import binascii
+from .crc import CRC
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +188,7 @@ class PyRFIDGeek(object):
         # http://biblstandard.dk/rfid/dk/RFID_Data_Model_for_Libraries_February_2009.pdf
         version = response[0][0]    # not sure if this is really the way to do it
         if version != '0' and version != '1':
-            print response
+            print(response)
             return {'error': 'unknown-version: %s' % version}
 
         usage_type = {
@@ -249,10 +251,10 @@ class PyRFIDGeek(object):
         crc = CRC().calculate(p)[::-1]
         data_bytes[19:21] = crc
 
-        print data_bytes
+        print(data_bytes)
 
         for x in range(8):
-            print data_bytes[x*4:x*4+4]
+            print(data_bytes[x*4:x*4+4])
             attempt = 1
             while not self.write_block(uid, x, data_bytes[x*4:x*4+4]):
                 logger.warn('Attempt %d of %d: Write failed, retrying...' % (attempt, max_attempts))
@@ -265,7 +267,7 @@ class PyRFIDGeek(object):
 
     def write_blocks_to_card(self, uid, data_bytes, offset=0, nblocks=8):
         for x in range(offset, nblocks):
-            print data_bytes[x*4:x*4+4]
+            print(data_bytes[x*4:x*4+4])
             success = False
             attempts = 0
             max_attempts = 10
@@ -296,7 +298,7 @@ class PyRFIDGeek(object):
         data_bytes[1] = '01'  # partno
         data_bytes[2] = '01'  # nparts
         userid = ['%02X' % ord(c) for c in data['user_id']]
-        print 'userid:', userid
+        print('userid:', userid)
         data_bytes[3:3+len(userid)] = userid
         data_bytes[21:23] = ['%02X' % ord(c) for c in data['country']]
         libnr = ['%02X' % ord(c) for c in data['library']]
@@ -310,7 +312,7 @@ class PyRFIDGeek(object):
         crc = CRC().calculate(p)[::-1]
         data_bytes[19:21] = crc
 
-        print data_bytes
+        print(data_bytes)
 
         return self.write_blocks_to_card(uid, data_bytes)
 
@@ -363,9 +365,11 @@ class PyRFIDGeek(object):
 
         result = reader_type + entity + cmd + prms + eof
 
-        length = len(result)/2 + 3  # Number of *bytes*, + 3 to include SOF and LENGTH
+        length = int(len(result)/2) + 3  # Number of *bytes*, + 3 to include SOF and LENGTH
         length = '%04X' % length  # Convert int to hex
-        length = length.decode('hex')[::-1].encode('hex').upper()  # Reverse hex string to get LSB first
+        length = binascii.unhexlify(length)[::-1]  # Reverse hex string to get LSB first
+        length = binascii.hexlify(length).decode('ascii')
+
         result = sof + length + result
 
         self.write(result)
@@ -380,7 +384,7 @@ class PyRFIDGeek(object):
 
     def write(self, msg):
         logger.debug('SEND%3d: ' % (len(msg)/2) + msg[0:10] + colored(msg[10:12], attrs=['underline']) + msg[12:14] + colored(msg[14:], 'green'))
-        self.sp.write(msg)
+        self.sp.write(msg.encode('ascii'))
 
     def read(self):
         msg = self.sp.readall()
@@ -388,7 +392,7 @@ class PyRFIDGeek(object):
         return msg
 
     def get_response(self, response):
-        return re.findall(r'\[(.*?)\]', response)
+        return re.findall(r'\[(.*?)\]', response.decode('ascii'))
 
     def close(self):
         self.sp.close()

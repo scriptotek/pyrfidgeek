@@ -1,27 +1,22 @@
-# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- 
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # vim:fenc=utf-8:et:sw=4:ts=4:sts=4:tw=0
 from __future__ import print_function
 import logging
 import argparse
 import yaml
-#import pyreadline
 import sys
 import serial
 import time
 from termcolor import colored
+try:
+    from six.moves import input
+except ImportError
+    print('Please install six to run this example')
 
 from rfidgeek import PyRFIDGeek, ISO15693
 
 # You might need to change this:
 COM_PORT_NAME='/dev/tty.SLAB_USBtoUART'
-
-# def rlinput(prompt, prefill=''):
-#     readline.set_startup_hook(lambda: readline.insert_text(prefill))
-#     try:
-#         return raw_input(prompt)
-#     finally:
-#         readline.set_startup_hook()
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -65,7 +60,7 @@ try:
                 print(' ##########################################')
                 print()
                 #answer = rlinput(colored('Overwrite tag? ', 'red'), 'n').lower()
-                answer = raw_input('Overwrite tag? [y/n]').lower()
+                answer = input('Overwrite tag? [y/n]').lower()
                 if answer != 'y' and answer != 'j':
                     sys.exit(0)
 
@@ -78,7 +73,7 @@ try:
         if len(uids) != 0:
             print
             print('Libnr: %(library)s, Country: %(country)s, Parts: %(nparts)s' % data)
-            data['id'] = raw_input('Enter/scan document ID: ')
+            data['id'] = input('Enter/scan document ID: ')
 
             for partno, uid in enumerate(uids, start=1):
                 data['partno'] = partno

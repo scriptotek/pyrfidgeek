@@ -37,8 +37,7 @@ class CRC(object):
         self.crc_sum &= 0xffff
 
 if __name__ == '__main__':
-    
     # Test that should return 1AEE
     x = [ord(x) for x in 'RFID tag data model']
-    print CRC().calculate(x)
+    print(CRC().calculate(x))
 
