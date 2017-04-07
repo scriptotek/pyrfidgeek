@@ -2,8 +2,10 @@ from __future__ import print_function
 import yaml
 from rfidgeek import PyRFIDGeek, ISO14443A, ISO15693
 
-config = yaml.load(open('config.yml', 'r'))
-reader = PyRFIDGeek(config)
+# You might need to change this:
+COM_PORT_NAME='/dev/tty.SLAB_USBtoUART'
+
+reader = PyRFIDGeek(serial_port=COM_PORT_NAME, debug=True)
 
 protocols = [ISO14443A, ISO15693]
 

@@ -3,12 +3,14 @@ import logging
 import thread
 import time
 import json
-import argparse
 import yaml
 import time
 from copy import copy
 
 from rfidgeek import PyRFIDGeek, ISO15693
+
+# You might need to change this:
+COM_PORT_NAME='/dev/tty.SLAB_USBtoUART'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -16,12 +18,7 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 logger.addHandler(ch)
 
-parser = argparse.ArgumentParser(description='PyRfidGeek write patron card example')
-parser.add_argument('--config', nargs='?', default='config.yml', help='Config file')
-args = parser.parse_args()
-config = yaml.load(open(args.config, 'r'))
-
-rfid = PyRFIDGeek(config)
+rfid = PyRFIDGeek(serial_port=COM_PORT_NAME, debug=True)
 rfid.set_protocol(ISO15693)
 uids = list(rfid.inventory())
 if len(uids) == 1:

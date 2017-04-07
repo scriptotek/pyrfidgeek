@@ -6,37 +6,48 @@ boards (tested with RFIDUARTUSB7970 from RFIDGeek) and possibly other boards bas
 scan for ISO14443A/B cards and return their UIDs, but there's no read/write support for
 ISO14443 or Mifare (pull requests are welcome :))
 
+## Initialization
+
+If you haven't already, you might need to install the [CP210x
+USB to UART Bridge VCP Drivers](http://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers) first.
+
+You then need to find out the name of the virtual com port the RFID board is connected to.
+On Mac OS , it's most likely `/dev/tty.SLAB_USBtoUART`. If not, look for similar names
+under `/dev/`. On Windows, it will be `COMx`, where `x` is some number. Check device manager
+or scan through the ports to find `x`.
+
+Once you have the COM port name, you can initialize PyRFIDGeek like so:
+
+```
+from rfidgeek import PyRFIDGeek, ISO14443A, ISO15693
+
+rfid = PyRFIDGeek(serial_port='/dev/tty.SLAB_USBtoUART')
+```
+
+There's additional serial port options that can be changed, but most likely the defaults will do fine.
+
 ## Examples
 
 *See also the `example_*.py` files.*
 
-
 ### Scanning for ISO 14443 and 15693 tags:
 
 ```python
-import yaml
-from rfidgeek import PyRFIDGeek, ISO14443A, ISO15693
-config = yaml.load(open('config.yml', 'r'))
-reader = PyRFIDGeek(config)
-
 for protocol in [ISO14443A, ISO15693]:
-    reader.set_protocol(protocol)
-    for uid in reader.inventory():
+    rfid.set_protocol(protocol)
+    for uid in rfid.inventory():
         print('Found {} tag: {}', protocol, uid)
 
-reader.close()
+rfid.close()
 ```
 
 ### Reading ISO 15693 tags
 
 ```python
-import yaml
-from rfidgeek import PyRFIDGeek, ISO15693
-config = yaml.load(open('config.yml', 'r'))
-reader = PyRFIDGeek(config)
-reader.set_protocol(ISO15693)
-for uid in reader.inventory(single_slot=False):
-    item = reader.read_danish_model_tag(uid)
+rfid.set_protocol(ISO15693)
+
+for uid in rfid.inventory(single_slot=False):
+    item = rfid.read_danish_model_tag(uid)
     print
     print ' # Item id: %s (part %d of %d)' % (item['id'], item['partno'], item['nparts'])
     print '   Country: %s, library: %s' % (item['country'], item['library'])
@@ -45,18 +56,14 @@ for uid in reader.inventory(single_slot=False):
     else:
         print '   CRC check failed'
     print
-reader.close()
+
+rfid.close()
 ```
 
 ### Writing ISO 15693 tags
 
 ```python
-import yaml
-from rfidgeek import PyRFIDGeek, ISO15693
-
-config = yaml.load(open('config.yml', 'r'))
-rfid = PyRFIDGeek(config)
-reader.set_protocol(ISO15693)
+rfid.set_protocol(ISO15693)
 uids = rfid.inventory()
 
 for partno, uid in enumerate(uids):

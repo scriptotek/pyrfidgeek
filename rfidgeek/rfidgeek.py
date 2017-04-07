@@ -11,6 +11,10 @@ import time
 
 logger = logging.getLogger(__name__)
 
+ISO15693 = 'ISO15693'
+ISO14443A = 'ISO14443A'
+ISO14443B = 'ISO14443B'
+
 
 def flagsbyte(double_sub_carrier=False, high_data_rate=False, inventory=False,
               protocol_extension=False, afi=False, single_slot=False,
@@ -33,31 +37,28 @@ def flagsbyte(double_sub_carrier=False, high_data_rate=False, inventory=False,
 
     return '%02X' % int(bits, 2)     # return hex byte
 
-ISO15693 = 'ISO15693'
-ISO14443A = 'ISO14443A'
-ISO14443B = 'ISO14443B'
 
 class PyRFIDGeek(object):
 
-    def __init__(self, config):
+    def __init__(self, serial_port, serial_baud_rate=115200, serial_stop_bits=serial.STOPBITS_ONE,
+                 serial_parity=serial.PARITY_NONE, serial_data_bits=serial.EIGHTBITS, debug=False):
 
         self.protocol = None
 
-        self.config = config
-        if config['debug']:
+        if debug:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
 
-        self.sp = serial.Serial(port=self.config['serial']['port'],
-                                baudrate=self.config['serial']['baud_rate'],
-                                stopbits=self.config['serial']['stop_bits'],
-                                parity=self.config['serial']['parity'],
+        self.sp = serial.Serial(port=serial_port,
+                                baudrate=serial_baud_rate,
+                                stopbits=serial_stop_bits,
+                                parity=serial_parity,
+                                bytesize=serial_data_bits,
                                 timeout=0.1)
 
         if not self.sp:
-            raise StandardError('Could not connect to serial port '
-                                + self.config['serial']['port'])
+            raise StandardError('Could not connect to serial port ' + serial_port)
 
         logger.debug('Connected to ' + self.sp.portstr)
         self.flush()

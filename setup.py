@@ -5,11 +5,11 @@
 from distutils.core import setup
 
 setup(name='PyRFIDGeek',
-      version='1.0',
+      version='2.0',
       description='Serial communication with RFIDGeek boards',
       author='Dan Michael O. Heggø',
       author_email='d.m.heggo@ub.uio.no',
-      #url='http://www.python.org/sigs/distutils-sig/',
       packages=['rfidgeek'],
-      requires=['pyserial']
+      requires=['pyserial'],
+      zip_safe=True
      )
