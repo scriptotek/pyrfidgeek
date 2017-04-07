@@ -8,7 +8,7 @@ import yaml
 import time
 from copy import copy
 
-from pyrfidgeek import PyRFIDGeek, ISO15693
+from rfidgeek import PyRFIDGeek, ISO15693
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)

@@ -1,9 +1,17 @@
-**PyRFIDGeek** is a python package for reading and writing cards following the Danish RFID data model for libraries,
-using serial communication to [RFIDGeek](http://rfidgeek.com/) boards 
-(tested with RFIDUARTUSB7970) and possibly other boards based on the [TI TRF7970A chip](http://www.ti.com/product/trf7970A), 
-such as [TI's Evaluation Module](http://www.ti.com/tool/trf7970aevm) (EVM). 
+**PyRFIDGeek** is a python package for reading and writing ISO 15693 cards following the Danish
+RFID data model for libraries, using serial communication to [RFIDGeek](http://rfidgeek.com/)
+boards (tested with RFIDUARTUSB7970 from RFIDGeek) and possibly other boards based on the
+[TI TRF7970A chip](http://www.ti.com/product/trf7970A), such as
+[TI's Evaluation Module](http://www.ti.com/tool/trf7970aevm) (EVM). In addition, it can
+scan for ISO14443A/B cards and return their UIDs, but there's no read/write support for
+ISO14443 or Mifare (pull requests are welcome :))
 
-Looking for ISO14443 and ISO15693 tags:
+## Examples
+
+*See also the `example_*.py` files.*
+
+
+### Scanning for ISO 14443 and 15693 tags:
 
 ```python
 import yaml
@@ -19,13 +27,14 @@ for protocol in [ISO14443A, ISO15693]:
 reader.close()
 ```
 
-Reading example:
+### Reading ISO 15693 tags
 
 ```python
 import yaml
-from rfidgeek import PyRFIDGeek
+from rfidgeek import PyRFIDGeek, ISO15693
 config = yaml.load(open('config.yml', 'r'))
 reader = PyRFIDGeek(config)
+reader.set_protocol(ISO15693)
 for uid in reader.inventory(single_slot=False):
     item = reader.read_danish_model_tag(uid)
     print
@@ -39,14 +48,15 @@ for uid in reader.inventory(single_slot=False):
 reader.close()
 ```
 
-Writing example:
+### Writing ISO 15693 tags
 
 ```python
 import yaml
-from rfidgeek import PyRFIDGeek
+from rfidgeek import PyRFIDGeek, ISO15693
 
 config = yaml.load(open('config.yml', 'r'))
 rfid = PyRFIDGeek(config)
+reader.set_protocol(ISO15693)
 uids = rfid.inventory()
 
 for partno, uid in enumerate(uids):
@@ -65,5 +75,3 @@ for partno, uid in enumerate(uids):
 rfid.close()
 ```
 
-Installation for the websocket example:
-* Install the websocket python package: `pip install websocket-client` 

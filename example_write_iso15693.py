@@ -10,7 +10,7 @@ import serial
 import time
 from termcolor import colored
 
-from pyrfidgeek import PyRFIDGeek, ISO15693
+from rfidgeek import PyRFIDGeek, ISO15693
 
 
 # def rlinput(prompt, prefill=''):
@@ -36,7 +36,7 @@ config = yaml.load(open(args.config, 'r'))
 try:
     reader = PyRFIDGeek(config)
 except serial.serialutil.SerialException:
-    print "Failed to open serialport " + config['serial']['port']
+    print "Failed to open serial port " + config['serial']['port']
     sys.exit(1)
 
 reader.set_protocol(ISO15693)
@@ -50,7 +50,7 @@ try:
         print
         if len(uids) == 0:
             print
-            print 'Klar for ny bok!'
+            print 'Please add a new book'
             print
         else:
             print 'Found %d tag(s)' % len(uids)
@@ -81,7 +81,7 @@ try:
         if len(uids) != 0:
             print
             print 'Libnr: %(library)s, Country: %(country)s, Parts: %(nparts)s' % data
-            data['id'] = raw_input('Enter dokid: ')
+            data['id'] = raw_input('Enter/scan document ID: ')
 
             for partno, uid in enumerate(uids, start=1):
                 data['partno'] = partno
@@ -102,7 +102,7 @@ try:
 
             while len(uids) != 0:
                 print
-                print 'Vennligst fjern boka'
+                print 'Please remove the book'
                 print
                 uids = list(reader.inventory())
                 time.sleep(1)
