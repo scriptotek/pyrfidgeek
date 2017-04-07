@@ -10,6 +10,6 @@ setup(name='PyRFIDGeek',
       author='Dan Michael O. Heggø',
       author_email='d.m.heggo@ub.uio.no',
       #url='http://www.python.org/sigs/distutils-sig/',
-      packages=['pyrfidgeek'],
+      packages=['rfidgeek'],
       requires=['pyserial']
      )
