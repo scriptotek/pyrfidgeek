@@ -8,7 +8,8 @@ import pprint
 from termcolor import colored
 from crc import CRC
 import time
-logger = logging.getLogger()
+
+logger = logging.getLogger(__name__)
 
 
 def flagsbyte(double_sub_carrier=False, high_data_rate=False, inventory=False,
