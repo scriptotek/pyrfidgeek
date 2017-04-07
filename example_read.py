@@ -7,7 +7,7 @@ import yaml
 import time
 from copy import copy
 
-from pyrfidgeek import PyRFIDGeek
+from rfidgeek import PyRFIDGeek, ISO15693
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -22,6 +22,7 @@ args = parser.parse_args()
 config = yaml.load(open(args.config, 'r'))
 
 reader = PyRFIDGeek(config)
+reader.set_protocol(ISO15693)
 
 try:
 

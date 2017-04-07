@@ -10,7 +10,7 @@ import serial
 import time
 from termcolor import colored
 
-from pyrfidgeek import PyRFIDGeek
+from pyrfidgeek import PyRFIDGeek, ISO15693
 
 
 # def rlinput(prompt, prefill=''):
@@ -38,6 +38,8 @@ try:
 except serial.serialutil.SerialException:
     print "Failed to open serialport " + config['serial']['port']
     sys.exit(1)
+
+reader.set_protocol(ISO15693)
 
 
 try:

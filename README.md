@@ -3,8 +3,24 @@ using serial communication to [RFIDGeek](http://rfidgeek.com/) boards
 (tested with RFIDUARTUSB7970) and possibly other boards based on the [TI TRF7970A chip](http://www.ti.com/product/trf7970A), 
 such as [TI's Evaluation Module](http://www.ti.com/tool/trf7970aevm) (EVM). 
 
+Looking for ISO14443 and ISO15693 tags:
+
+```python
+import yaml
+from rfidgeek import PyRFIDGeek, ISO14443A, ISO15693
+config = yaml.load(open('config.yml', 'r'))
+reader = PyRFIDGeek(config)
+
+for protocol in [ISO14443A, ISO15693]:
+    reader.set_protocol(protocol)
+    for uid in reader.inventory():
+        print('Found {} tag: {}', protocol, uid)
+
+reader.close()
+```
 
 Reading example:
+
 ```python
 import yaml
 from rfidgeek import PyRFIDGeek
@@ -24,6 +40,7 @@ reader.close()
 ```
 
 Writing example:
+
 ```python
 import yaml
 from rfidgeek import PyRFIDGeek

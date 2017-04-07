@@ -32,10 +32,15 @@ def flagsbyte(double_sub_carrier=False, high_data_rate=False, inventory=False,
 
     return '%02X' % int(bits, 2)     # return hex byte
 
+ISO15693 = 'ISO15693'
+ISO14443A = 'ISO14443A'
+ISO14443B = 'ISO14443B'
 
 class PyRFIDGeek(object):
 
     def __init__(self, config):
+
+        self.protocol = None
 
         self.config = config
         if config['debug']:
@@ -56,29 +61,37 @@ class PyRFIDGeek(object):
         logger.debug('Connected to ' + self.sp.portstr)
         self.flush()
 
-        # Initialize reader: 0xFF
+    def set_protocol(self, protocol=ISO15693):
+
+        self.protocol = protocol
+
+        # 1. Initialize reader: 0xFF
         # 0108000304 FF 0000
-        self.issue_iso15693_command(cmd='FF')
+        self.issue_evm_command(cmd='FF')  # Should return "TRF7970A EVM"
 
-        # Register write request: 0x10
-        # 010A000304 10 01 21 0000
-        # 010C000304 10 00 21 0100 0000
-        # 010C000304 10 00 21 0100 0000
-        self.issue_iso15693_command(cmd='10', flags='00', command_code='21')
+        # self.issue_evm_command(cmd='10', prms='0121')
+        # self.issue_evm_command(cmd='10', prms='0021')
 
-        # Register write request: 0x10
-        # 010A000304 10 01 21 0000
-        # 010C000304 10 00 21 0100 0000
-        # 010C000304 10 00 21 0100 0000
-        self.issue_iso15693_command(cmd='10', flags='00', command_code='21', data='0100')
+        # Select protocol: 15693 with full power
+        self.issue_evm_command(cmd='10', prms='00210100')
 
-        # Enable AGC: 0xF0
+        # Setting up registers:
+        #   0x00 Chip Status Control: Set to 0x21 for full power, 0x31 for half power
+        #   0x01 ISO Control: Set to 0x00 for ISO15693, 0x09 for ISO14443A, 0x0C for ISO14443B
+        protocol_values = {
+            ISO15693: '00',   # 01 for 1-out-of-256 modulation
+            ISO14443A: '09',
+            ISO14443B: '0C',
+        }
+        self.issue_evm_command(cmd='10', prms='0021' + '01' + protocol_values[protocol])
+
+        # 3. AGC selection (0xF0) : AGC enable (0x00)
         # 0109000304 F0 00 0000
-        self.issue_iso15693_command(cmd='F0')
+        self.issue_evm_command(cmd='F0', prms='00')
 
-        # AM input: 0xF1
+        # 4. AM/PM input selection (0xF1) : AM input (0xFF)
         # 0109000304 F1 FF 0000
-        self.issue_iso15693_command(cmd='F1', flags='FF')
+        self.issue_evm_command(cmd='F1', prms='FF')
 
     def enable_led(self, led_no):
         cmd_codes = {2: 'FB', 3: 'F9', 4: 'F7', 5: 'F5', 6: 'F3'}
@@ -88,14 +101,49 @@ class PyRFIDGeek(object):
         cmd_codes = {2: 'FC', 3: 'FA', 4: 'F8', 5: 'F6', 6: 'F4'}
         self.issue_iso15693_command(cmd=cmd_codes[led_no])
 
-    def inventory(self, single_slot=False):
+    def inventory(self, **kwargs):
+        if self.protocol == ISO15693:
+            return self.inventory_iso15693(**kwargs)
+        elif self.protocol == ISO14443A:
+            return self.inventory_iso14443A(**kwargs)
+
+    def inventory_iso14443A(self):
+        """
+        By sending a 0xA0 command to the EVM module, the module will carry out
+        the whole ISO14443 anti-collision procedure and return the tags found.
+
+            >>> Req type A (0x26)
+            <<< ATQA (0x04 0x00)
+            >>> Select all (0x93, 0x20)
+            <<< UID + BCC
+
+        """
+        response = self.issue_evm_command(cmd='A0')
+
+        for itm in response:
+            iba = bytearray.fromhex(itm)
+            # Assume 4-byte UID + 1 byte Block Check Character (BCC)
+            if len(iba) != 5:
+                logger.warn('Encountered tag with UID of unknown length')
+                continue
+            if iba[0] ^ iba[1] ^ iba[2] ^ iba[3] ^ iba[4] != 0:
+                logger.warn('BCC check failed for tag')
+                continue
+            uid = itm[:8]  # hex string, so each byte is two chars
+
+            logger.debug('Found tag: %s (%s) ', uid, itm[8:])
+            yield uid
+
+            # See https://github.com/nfc-tools/libnfc/blob/master/examples/nfc-anticol.c
+
+    def inventory_iso15693(self, single_slot=False):
         # Command code 0x01: ISO 15693 Inventory request
         # Example: 010B000304 14 24 0100 0000
-        response = self.issue_iso15693_command(cmd='14',         # ??
-                                      flags=flagsbyte(inventory=True,
-                                                      single_slot=single_slot),
-                                      command_code='01',
-                                      data='00')
+        response = self.issue_iso15693_command(cmd='14',
+                                               flags=flagsbyte(inventory=True,
+                                                               single_slot=single_slot),
+                                               command_code='01',
+                                               data='00')
         for itm in response:
             itm = itm.split(',')
             if itm[0] == 'z':

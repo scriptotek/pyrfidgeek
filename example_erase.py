@@ -8,7 +8,7 @@ import yaml
 import time
 from copy import copy
 
-from pyrfidgeek import PyRFIDGeek
+from pyrfidgeek import PyRFIDGeek, ISO15693
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -22,6 +22,7 @@ args = parser.parse_args()
 config = yaml.load(open(args.config, 'r'))
 
 rfid = PyRFIDGeek(config)
+rfid.set_protocol(ISO15693)
 uids = list(rfid.inventory())
 if len(uids) == 1:
 	rfid.enable_led(5)
