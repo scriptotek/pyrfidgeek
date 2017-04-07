@@ -6,6 +6,10 @@ boards (tested with RFIDUARTUSB7970 from RFIDGeek) and possibly other boards bas
 scan for ISO14443A/B cards and return their UIDs, but there's no read/write support for
 ISO14443 or Mifare (pull requests are welcome :))
 
+To install from PyPI:
+
+    pip install rfidgeek
+
 ## Initialization
 
 If you haven't already, you might need to install the [CP210x
