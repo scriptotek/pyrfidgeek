@@ -108,7 +108,7 @@ class ScannerThread(threading.Thread):
                     data = self.mailbox.get()
                     if data == 'shutdown':
                         print self, 'Shutting down inventory scan'
-                        #rfid.close()
+                        # rfid.close()
                         return False
                     elif data == 'pause':
                         self.paused = True
@@ -132,10 +132,10 @@ class ScannerThread(threading.Thread):
                     for uid, oid in uids.items():
 
                         if oid == 'unknown':
-                            #if not uid in prev_uids[0] and not uid in prev_uids[1]:
+                            # if not uid in prev_uids[0] and not uid in prev_uids[1]:
                             item = rfid.read_danish_model_tag(uid)
                             if item['error'] != '':
-                                #logger.warn(item['error'])
+                                # logger.warn(item['error'])
                                 pass
                             else:
 
@@ -151,7 +151,7 @@ class ScannerThread(threading.Thread):
 
                                 elif 'id' in item:
                                     oid = item['id']
-                                    if not oid in uids.values():
+                                    if oid not in uids.values():
                                         logger.info('Tag found of type %s: %s' % (item['usage_type'], item['id']))
                                         ws.send(json.dumps({
                                             'rcpt': 'frontend',
@@ -168,15 +168,16 @@ class ScannerThread(threading.Thread):
 
         finally:
             print "Thread is exiting..."
-            #rfid.close()
+            # rfid.close()
 
         time.sleep(1)
-        #ws.close()
+        # ws.close()
 
         print "Thread is terminating..."
 
 
 rfid = PyRFIDGeek(config)
+
 
 class WsSock(object):
 
@@ -187,10 +188,10 @@ class WsSock(object):
     def connect(self):
         logger.info('Trying to connect to linode2.biblionaut.net:8080')
         self.ws = websocket.WebSocketApp('ws://linode2.biblionaut.net:8080',
-                                 on_open = self.on_open,
-                                 on_message = self.on_message,
-                                 on_error = self.on_error,
-                                 on_close = self.on_close)
+                                         on_open=self.on_open,
+                                         on_message=self.on_message,
+                                         on_error=self.on_error,
+                                         on_close=self.on_close)
         self.ws.run_forever()
 
     def on_error(self, ws, error):
@@ -211,14 +212,14 @@ class WsSock(object):
         self.attach_websocket_logger()
         self.scanner = ScannerThread(rfid, ws, self.mailbox)
         self.scanner.start()
-        #thread.start_new_thread(run, (ws,))
+        # thread.start_new_thread(run, (ws,))
 
     def on_message(self, ws, message):
         message = json.loads(message)
-        if not 'data' in message:
+        if 'data' not in message:
             return
 
-        user_id = str(message['data']['user_id']);
+        user_id = str(message['data']['user_id'])
         logger.info('Got patron card write request from ws frontend client, user id: %s ' % user_id)
         queue = active_queues[0]
 
@@ -261,7 +262,7 @@ class WsSock(object):
     def attach_websocket_logger(self):
         wh = WebSocketHandler(self.ws)
         wh.setLevel(logging.INFO)
-        #logger.addHandler(wh)
+        # logger.addHandler(wh)
 
 
 if __name__ == "__main__":

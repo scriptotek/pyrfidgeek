@@ -1,4 +1,4 @@
-# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- 
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # vim:fenc=utf-8:et:sw=4:ts=4:sts=4:tw=0
 from __future__ import print_function
 import logging
@@ -10,7 +10,7 @@ from copy import copy
 from rfidgeek import PyRFIDGeek, ISO15693
 
 # You might need to change this:
-COM_PORT_NAME='/dev/tty.SLAB_USBtoUART'
+COM_PORT_NAME = '/dev/tty.SLAB_USBtoUART'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -39,10 +39,10 @@ try:
             led_enabled = False
         for uid in uids:
 
-            if not uid in prev_uids[0] and not uid in prev_uids[1]:  # and not uid in prev_uids[2]:
+            if uid not in prev_uids[0] and uid not in prev_uids[1]:  # and not uid in prev_uids[2]:
                 item = reader.read_danish_model_tag(uid)
                 if item['error'] != '':
-                    print('error reading tag: ',item['error'])
+                    print('error reading tag: ', item['error'])
                 else:
                     if item['is_blank']:
                         print(' Found blank tag')
@@ -61,9 +61,9 @@ try:
                         else:
                             print('   CRC check failed')
 
-            #reader.unlock_afi(uid)
+            # reader.unlock_afi(uid)
 
-        #prev_uids[2] = copy(prev_uids[1])
+        # prev_uids[2] = copy(prev_uids[1])
         prev_uids[1] = copy(prev_uids[0])
         prev_uids[0] = copy(uids)
 

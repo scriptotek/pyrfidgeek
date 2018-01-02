@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- 
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # vim:fenc=utf-8:et:sw=4:ts=4:sts=4:tw=0
 
 from setuptools import setup
@@ -41,5 +41,8 @@ setup(
     packages=['rfidgeek'],
 
     # Run-time dependencies
-    install_requires=['pyserial']
+    install_requires=['pyserial'],
+
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest', 'pytest-pep8']
 )

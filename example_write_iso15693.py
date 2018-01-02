@@ -8,15 +8,16 @@ import sys
 import serial
 import time
 from termcolor import colored
+
 try:
     from six.moves import input
-except ImportError
+except ImportError:
     print('Please install six to run this example')
 
 from rfidgeek import PyRFIDGeek, ISO15693
 
 # You might need to change this:
-COM_PORT_NAME='/dev/tty.SLAB_USBtoUART'
+COM_PORT_NAME = '/dev/tty.SLAB_USBtoUART'
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -35,7 +36,6 @@ reader.set_protocol(ISO15693)
 
 
 try:
-
     uids = []
     while len(uids) == 0:
         uids = list(reader.inventory())
@@ -51,7 +51,7 @@ try:
         for uid in uids:
             item = reader.read_danish_model_tag(uid)
             print(item)
-            if not 'id' in item:
+            if 'id' not in item:
                 print(item)
             elif item['id'] != '':
                 print()
@@ -59,7 +59,7 @@ try:
                 print(' # Warning: Found a non-blank tag         #')
                 print(' ##########################################')
                 print()
-                #answer = rlinput(colored('Overwrite tag? ', 'red'), 'n').lower()
+                # answer = rlinput(colored('Overwrite tag? ', 'red'), 'n').lower()
                 answer = input('Overwrite tag? [y/n]').lower()
                 if answer != 'y' and answer != 'j':
                     sys.exit(0)
@@ -86,7 +86,6 @@ try:
                     print(' ##########################################')
                     print()
                     sys.exit(0)
-
 
             print
             print('Tag(s) written successfully!')

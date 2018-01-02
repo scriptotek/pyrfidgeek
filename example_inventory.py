@@ -3,7 +3,7 @@ import yaml
 from rfidgeek import PyRFIDGeek, ISO14443A, ISO15693
 
 # You might need to change this:
-COM_PORT_NAME='/dev/tty.SLAB_USBtoUART'
+COM_PORT_NAME = '/dev/tty.SLAB_USBtoUART'
 
 reader = PyRFIDGeek(serial_port=COM_PORT_NAME, debug=True)
 

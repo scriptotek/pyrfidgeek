@@ -171,9 +171,9 @@ class PyRFIDGeek(object):
         block_offset = 0
         number_of_blocks = 8
         response = self.issue_iso15693_command(cmd='18',
-                                      flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
-                                      command_code='23',
-                                      data=uid + '%02X%02X' % (block_offset, number_of_blocks))
+                                               flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
+                                               command_code='23',
+                                               data=uid + '%02X%02X' % (block_offset, number_of_blocks))
 
         response = response[0]
         if response == 'z':
@@ -236,7 +236,6 @@ class PyRFIDGeek(object):
             'crc_ok': calc_crc == crc
         }
 
-
     def write_danish_model_tag(self, uid, data, max_attempts=20):
         block_number = 0
         blocks = []
@@ -287,7 +286,7 @@ class PyRFIDGeek(object):
                     if attempts > max_attempts:
                         logger.warn('Giving up!')
                         return False
-                    #time.sleep(1.0)
+                    # time.sleep(1.0)
         return True
 
     def erase_card(self, uid):
@@ -329,31 +328,30 @@ class PyRFIDGeek(object):
             raise StandardError('write_block got data of unknown type/length')
 
         response = self.issue_iso15693_command(cmd='18',
-                                      flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
-                                      command_code='21',
-                                      data='%s%02X%s' % (uid, block_number, ''.join(data)))
+                                               flags=flagsbyte(address=True),  # 32 (dec) <-> 20 (hex)
+                                               command_code='21',
+                                               data='%s%02X%s' % (uid, block_number, ''.join(data)))
         if response[0] == '00':
             logger.debug('Wrote block %d successfully', block_number)
             return True
         else:
             return False
 
-
     def unlock_afi(self, uid):
         self.issue_iso15693_command(cmd='18',
-                           flags=flagsbyte(address=False,
-                                           high_data_rate=True,
-                                           option=False),  # 32 (dec) <-> 20 (hex)
-                           command_code='27',
-                           data='C2')
+                                    flags=flagsbyte(address=False,
+                                                    high_data_rate=True,
+                                                    option=False),  # 32 (dec) <-> 20 (hex)
+                                    command_code='27',
+                                    data='C2')
 
     def lock_afi(self, uid):
         self.issue_iso15693_command(cmd='18',
-                           flags=flagsbyte(address=False,
-                                           high_data_rate=False,
-                                           option=False),  # 32 (dec) <-> 20 (hex)
-                           command_code='27',
-                           data='07')
+                                    flags=flagsbyte(address=False,
+                                                    high_data_rate=False,
+                                                    option=False),  # 32 (dec) <-> 20 (hex)
+                                    command_code='27',
+                                    data='07')
 
     def issue_evm_command(self, cmd, prms=''):
         # The EVM protocol has a general form as shown below:
@@ -404,4 +402,3 @@ class PyRFIDGeek(object):
 
     def close(self):
         self.sp.close()
-
