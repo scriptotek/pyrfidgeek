@@ -6,9 +6,17 @@ import serial
 import logging
 import re
 import pprint
-from termcolor import colored
 import time
 import binascii
+
+try:
+    # Use colored logging if termcolor is available
+    from termcolor import colored
+except ImportError:
+    # But just pass through the message if not
+    def colored(msg, *args, **kwargs):
+        return msg
+
 from .crc import CRC
 
 logger = logging.getLogger(__name__)

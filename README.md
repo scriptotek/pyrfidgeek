@@ -86,3 +86,23 @@ for partno, uid in enumerate(uids):
 rfid.close()
 ```
 
+### Debugging
+
+To see all messages sent and received, add a logging handler before you
+initialize the RFIDGeek module, such as `StreamHandler` that prints to
+stderr by default:
+
+```python
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+logger.addHandler(ch)
+
+...
+
+```
+
+Optionally, install termcolor (`pip install termcolor`) to get
+color coded messages.
